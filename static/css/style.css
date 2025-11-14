@@ -1,0 +1,26 @@
+/* static/css/style.css */
+body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.container {
+    text-align: center;
+}
+
+.video-wrapper {
+    display: inline-block;
+    border: 2px solid #444;
+    padding: 6px;
+    background: #000;
+}
+
+#video {
+    max-width: 800px;
+    border-radius: 4px;
+}

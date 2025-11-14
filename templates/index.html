@@ -1,0 +1,19 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <title>Realtime Emotion Detection + Grad-CAM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Realtime Emotion Detection (YOLO-like bbox) + Grad-CAM</h2>
+        <div class="video-wrapper">
+            <img id="video" src="{{ url_for('video_feed') }}" />
+        </div>
+        <p>Labels: happiness, surprise, sadness, anger, disgust, fear</p>
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
