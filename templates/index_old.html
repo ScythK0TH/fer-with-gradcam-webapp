@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="utf-8">
-    <title>Emotion Detection (Processed Only)</title>
+    <title>Client Camera Emotion Detection</title>
     <style>
         body {
             background: #111;
@@ -12,27 +12,22 @@
             padding-top: 20px;
         }
         h2 { color: #0f0; }
-        #result {
+        #cam, #result {
             border: 2px solid #444;
             border-radius: 8px;
             margin: 10px;
-        }
-
-        /* ซ่อน video ทั้งหมด */
-        #cam {
-            display: none;
         }
     </style>
 </head>
 <body>
 
-<h2>🎥 Real-time Emotion Detection</h2>
+<h2>🎥 Client Camera → Server Inference → Live Result</h2>
 
-<!-- ซ่อนวิดีโอของ Client -->
-<video id="cam" autoplay playsinline width="480"></video>
+<!-- Client Camera -->
+<video id="cam" autoplay playsinline width="480"></video><br>
 
-<!-- แสดงเฉพาะผลลัพธ์จาก Server -->
-<img id="result" width="480" alt="Processed output will appear here">
+<!-- Server Output -->
+<img id="result" width="480" alt="processed result will appear here">
 
 <script>
     const video = document.getElementById("cam");
@@ -47,11 +42,12 @@
         }
     }
 
-    // Auto detect ws:// or wss://
+    // Auto-correct ws:// or wss:// depending on deployment
     const wsProtocol = location.protocol === "https:" ? "wss" : "ws";
     const ws = new WebSocket(wsProtocol + "://" + window.location.host + "/ws");
 
     ws.onmessage = (msg) => {
+        // server returns base64-encoded frame
         result.src = "data:image/jpeg;base64," + msg.data;
     };
 

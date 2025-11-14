@@ -4,3 +4,5 @@ torchvision
 opencv-python
 numpy
 Pillow
+flask-sock
+simple-websocket
