@@ -2,58 +2,87 @@
 <html lang="th">
 <head>
     <meta charset="utf-8">
-    <title>Emotion Detection (Processed Only)</title>
-    <style>
-        body {
-            background: #111;
-            color: #eee;
-            font-family: Arial;
-            text-align: center;
-            padding-top: 20px;
-        }
-        h2 { color: #0f0; }
-        #result {
-            border: 2px solid #444;
-            border-radius: 8px;
-            margin: 10px;
-        }
-
-        /* ซ่อน video ทั้งหมด */
-        #cam {
-            display: none;
-        }
-    </style>
+    <title>Emotion Detection Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
 
-<h2>🎥 Real-time Emotion Detection</h2>
+<body class="bg-gray-900 text-gray-200">
 
-<!-- ซ่อนวิดีโอของ Client -->
-<video id="cam" autoplay playsinline width="480"></video>
+    <div class="flex flex-col items-center py-6">
+        <h2 class="text-3xl font-bold text-green-400 mb-4">
+            Real-time Emotion Detection
+        </h2>
 
-<!-- แสดงเฉพาะผลลัพธ์จาก Server -->
-<img id="result" width="480" alt="Processed output will appear here">
+        <div class="flex gap-6">
+
+            <!-- LEFT: Processed Image -->
+            <div class="bg-gray-800 p-4 rounded-xl shadow-lg">
+                <img id="result" class="w-[480px] rounded-lg border border-gray-700" />
+            </div>
+
+            <!-- RIGHT: Emotion Probability Panel -->
+            <div class="bg-gray-800 p-5 rounded-xl shadow-lg w-64">
+                <h3 class="text-xl font-semibold text-blue-400 mb-3">
+                    Emotion Probability
+                </h3>
+
+                <div id="prob-list" class="space-y-2">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Hidden client camera -->
+    <video id="cam" autoplay playsinline style="display:none"></video>
 
 <script>
     const video = document.getElementById("cam");
     const result = document.getElementById("result");
+    const probList = document.getElementById("prob-list");
+
+    const EMOTION_LABELS = ['happiness','surprise','sadness','anger','disgust','fear'];
 
     async function startCamera() {
         try {
             let stream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = stream;
         } catch (err) {
-            alert("Cannot access camera: " + err);
+            alert("Camera error: " + err);
         }
     }
 
-    // Auto detect ws:// or wss://
     const wsProtocol = location.protocol === "https:" ? "wss" : "ws";
     const ws = new WebSocket(wsProtocol + "://" + window.location.host + "/ws");
 
     ws.onmessage = (msg) => {
-        result.src = "data:image/jpeg;base64," + msg.data;
+        let data = JSON.parse(msg.data);
+
+        // Update image
+        result.src = "data:image/jpeg;base64," + data.frame;
+
+        // Update probabilities list
+        updateProbList(data.probs);
     };
+
+    function updateProbList(probObj) {
+        probList.innerHTML = "";
+
+        // sort by highest prob
+        let sorted = Object.entries(probObj).sort((a,b)=>b[1]-a[1]);
+
+        sorted.forEach(([label, prob]) => {
+            let pct = (prob * 100).toFixed(1);
+
+            probList.innerHTML += `
+                <div class="flex justify-between bg-gray-700 px-3 py-2 rounded-lg">
+                    <span>${label}</span>
+                    <span class="text-green-400 font-semibold">${pct}%</span>
+                </div>
+            `;
+        });
+    }
 
     function capture() {
         if (video.videoWidth === 0) return;
@@ -69,9 +98,7 @@
         ws.send(base64);
     }
 
-    // Send 10 fps to server
-    setInterval(capture, 100);
-
+    setInterval(capture, 100); // 10 FPS
     startCamera();
 </script>
 

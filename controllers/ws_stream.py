@@ -39,9 +39,7 @@ def preprocess_face(face_bgr):
 #   FACTORY: Create new processing instance for each client
 # ============================================================
 def create_client_processor():
-    """
-    สำหรับ Client แต่ละราย → สร้าง tracker และ gradcam คนละตัว
-    """
+
     tracker = CentroidTracker()
     gradcam = GradCAM(model, model.conv5)
 
@@ -55,16 +53,15 @@ def create_client_processor():
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = cascade.detectMultiScale(gray, 1.1, 4)
 
-        rects = []
-        for (x, y, w, h) in faces:
-            rects.append((x, y, x + w, y + h))
-
+        rects = [(x, y, x+w, y+h) for (x, y, w, h) in faces]
         objects = tracker.update(rects)
+
+        # Default probs (no face)
+        prob_dict = {label: 0 for label in CLASS_LABELS}
 
         for objectID, (centroid, bbox) in objects.items():
             (sx, sy, ex, ey) = bbox
             face = frame[sy:ey, sx:ex]
-
             if face.size == 0:
                 continue
 
@@ -74,16 +71,27 @@ def create_client_processor():
                 out = model(tensor)
                 probs = torch.softmax(out, dim=1)[0].cpu().numpy()
 
-            cls_id = int(np.argmax(probs))
-            conf = float(probs[cls_id])
-            label = CLASS_LABELS[cls_id]
+            # Convert to dict for UI
+            prob_dict = {CLASS_LABELS[i]: float(probs[i]) for i in range(len(CLASS_LABELS))}
 
-            # Draw bbox
+            cls_id = int(np.argmax(probs))
+            label = CLASS_LABELS[cls_id]
+            conf = float(probs[cls_id])
+
+            # Draw bounding box + label
             cv2.rectangle(frame, (sx, sy), (ex, ey), (0, 255, 0), 2)
             cv2.putText(frame, f"{label} {conf*100:.1f}%",
                         (sx, sy - 5), cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6, (0, 255, 0), 2)
+                        0.6, (0,255,0), 2)
 
-        return encode_image_to_base64(frame)
+        # Encode output
+        frame_b64 = encode_image_to_base64(frame)
+
+        # Wrap in JSON
+        import json
+        return json.dumps({
+            "frame": frame_b64,
+            "probs": prob_dict
+        })
 
     return process_frame
