@@ -78,6 +78,16 @@ def create_client_processor():
             label = CLASS_LABELS[cls_id]
             conf = float(probs[cls_id])
 
+            # Generate GradCAM heatmap
+            heatmap = gradcam.generate(tensor, cls_id)
+            heatmap_resized = cv2.resize(heatmap, (ex - sx, ey - sy))
+            heatmap_color = cv2.applyColorMap(heatmap_resized, cv2.COLORMAP_JET)
+            
+            # Overlay heatmap on face region
+            alpha = 0.4
+            face_region = frame[sy:ey, sx:ex]
+            frame[sy:ey, sx:ex] = cv2.addWeighted(face_region, 1 - alpha, heatmap_color, alpha, 0)
+
             # Draw bounding box + label
             cv2.rectangle(frame, (sx, sy), (ex, ey), (0, 255, 0), 2)
             cv2.putText(frame, f"{label} {conf*100:.1f}%",
